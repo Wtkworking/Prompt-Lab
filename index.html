@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AiBA Prompt Lab — เครื่องมือฝึกเขียนคำสั่ง AI</title>
+<style>
+:root{
+  --void:#080B18;
+  --deep:#0E1428;
+  --surface:#141C38;
+  --surface2:#1B2547;
+  --line:#293567;
+  --line-soft:#1F2A52;
+  --text:#E8EBFA;
+  --dim:#8590BE;
+  --faint:#5A6499;
+  --cyan:#3BD9EC;
+  --violet:#9B6BFF;
+  --mint:#2FD39F;
+  --rose:#FF6B85;
+  --mono:"JetBrains Mono","IBM Plex Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  --thai:"IBM Plex Sans Thai","Noto Sans Thai","Sarabun","Leelawadee UI",Tahoma,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--void);
+  background-image:
+    radial-gradient(900px 480px at 14% -8%, rgba(59,217,236,.10), transparent 62%),
+    radial-gradient(760px 420px at 92% 4%, rgba(155,107,255,.12), transparent 60%),
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+  background-size:auto,auto,34px 34px,34px 34px;
+  background-attachment:fixed;
+  color:var(--text);
+  font-family:var(--thai);
+  font-size:16px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 70px}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding-bottom:16px;border-bottom:1px solid var(--line-soft);margin-bottom:22px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.dotgrid{width:26px;height:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;flex:none}
+.dotgrid i{background:var(--line);border-radius:1px}
+.dotgrid i:nth-child(1),.dotgrid i:nth-child(5),.dotgrid i:nth-child(9){background:var(--cyan)}
+.dotgrid i:nth-child(3){background:var(--violet)}
+.brand h1{margin:0;font-size:19px;font-weight:700;letter-spacing:-.01em}
+.brand p{margin:0;font-size:12px;color:var(--faint);font-family:var(--mono);letter-spacing:.04em}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--dim);
+  padding:7px 15px;border-radius:6px;font:inherit;font-size:13px;cursor:pointer}
+.ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+
+.levels{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.lv{background:var(--surface);border:1px solid var(--line-soft);border-radius:10px;
+  padding:13px 15px;text-align:left;font:inherit;color:var(--text);cursor:pointer;position:relative}
+.lv:hover:not(:disabled){border-color:var(--line)}
+.lv:disabled{cursor:not-allowed;opacity:.4}
+.lv .num{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.1em}
+.lv .nm{font-size:14.5px;font-weight:700;margin-top:1px}
+.lv .sb{font-size:12px;color:var(--dim);margin-top:1px}
+.lv[data-on="1"]{border-color:var(--cyan);background:linear-gradient(180deg,rgba(59,217,236,.10),rgba(59,217,236,0))}
+.lv[data-on="1"] .num{color:var(--cyan)}
+.lv[data-cleared="1"] .num::after{content:" ✓";color:var(--mint)}
+.lv .lock{position:absolute;top:13px;right:14px;font-size:11px;color:var(--faint);font-family:var(--mono)}
+
+.qbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;
+  background:var(--deep);border:1px solid var(--line-soft);border-radius:10px;padding:11px 14px}
+.qbar .lab{font-size:12px;color:var(--faint);font-family:var(--mono);letter-spacing:.06em}
+.chip{background:var(--surface);border:1px solid var(--line-soft);color:var(--dim);
+  border-radius:7px;padding:7px 15px;font:inherit;font-size:13.5px;cursor:pointer;
+  display:flex;align-items:center;gap:8px}
+.chip:hover{border-color:var(--line);color:var(--text)}
+.chip[aria-pressed="true"]{border-color:var(--cyan);color:var(--text);background:var(--surface2)}
+.chip .st{width:7px;height:7px;border-radius:50%;background:var(--line);flex:none}
+.chip[data-done="1"] .st{background:var(--mint);box-shadow:0 0 8px rgba(47,211,159,.65)}
+.qbar .spacer{flex:1}
+.qbar .meta{font-size:12px;color:var(--faint);font-family:var(--mono)}
+
+.grid{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:16px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.levels{grid-template-columns:1fr}}
+.pane{background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;padding:20px 22px}
+
+.brief .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--violet);margin-bottom:12px}
+.brief dl{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;margin:0 0 15px;font-size:13.5px}
+.brief dt{color:var(--faint);font-family:var(--mono);font-size:11.5px;padding-top:3px}
+.brief dd{margin:0;color:var(--text)}
+.brief .rule{height:1px;background:var(--line-soft);margin:0 0 15px}
+.brief .body{font-size:14.5px;line-height:1.8;color:#CBD3F0}
+.brief .task{margin-top:17px;padding:13px 15px;border-radius:9px;
+  background:var(--surface2);border:1px solid var(--line);font-size:14.5px;font-weight:700;color:var(--cyan)}
+
+.ehead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.ehead b{font-size:14.5px;font-weight:700}
+.ehead span{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+textarea{width:100%;min-height:200px;resize:vertical;background:var(--deep);
+  border:1px solid var(--line);border-radius:9px;padding:14px 16px;
+  color:var(--text);font:inherit;font-size:14.5px;line-height:1.8;caret-color:var(--cyan)}
+textarea::placeholder{color:var(--faint)}
+textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(59,217,236,.14)}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+.go{border:0;border-radius:8px;padding:11px 24px;font:inherit;font-size:14.5px;font-weight:700;
+  cursor:pointer;background:linear-gradient(135deg,var(--cyan),#2AA9DE);color:#04121A}
+.go:hover{filter:brightness(1.08)}
+.kbd{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+
+.readout{margin-top:20px;border-top:1px solid var(--line-soft);padding-top:17px}
+.rtop{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:12px}
+.rtop .cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--faint)}
+.rtop .sub{font-size:12.5px;color:var(--dim);margin-top:2px}
+.num{font-family:var(--mono);display:flex;align-items:baseline;gap:3px}
+.num b{font-size:44px;line-height:.95;font-weight:700;letter-spacing:-.03em;color:var(--text)}
+.num i{font-style:normal;font-size:13px;color:var(--faint)}
+.num.full b{color:var(--mint);text-shadow:0 0 22px rgba(47,211,159,.45)}
+
+.seg{display:flex;gap:5px;margin-bottom:16px}
+.seg div{flex:1;height:7px;border-radius:2px;background:var(--line-soft)}
+.seg div.on{background:linear-gradient(90deg,var(--cyan),var(--mint))}
+.seg div.off{background:rgba(255,107,133,.28)}
+
+ul.crit{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+ul.crit li{display:grid;grid-template-columns:16px 1fr auto;gap:12px;align-items:start;
+  padding:11px 13px;border-radius:8px;background:var(--deep);border:1px solid var(--line-soft)}
+ul.crit li.ok{border-color:rgba(47,211,159,.4);background:rgba(47,211,159,.07)}
+ul.crit li.no{border-color:rgba(255,107,133,.3);background:rgba(255,107,133,.05)}
+.gl{width:14px;height:14px;border-radius:3px;margin-top:4px;background:var(--line);
+  display:grid;place-items:center;font-size:9px;color:var(--void);font-weight:700}
+li.ok .gl{background:var(--mint)}
+li.no .gl{background:var(--rose)}
+.cl{font-size:14px;font-weight:700}
+.ch{font-size:12.5px;color:var(--dim);margin-top:2px}
+li.ok .ch{color:var(--mint)}
+.cw{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:4px}
+
+.alert{margin-top:14px;padding:12px 14px;border-radius:8px;font-size:13.5px;font-weight:700;
+  background:rgba(255,107,133,.1);border:1px solid rgba(255,107,133,.4);color:var(--rose)}
+.said{margin-top:15px;padding:13px 15px;border-radius:8px;font-size:14px}
+.said.ok{background:rgba(47,211,159,.1);border:1px solid rgba(47,211,159,.35);color:var(--mint);font-weight:700}
+.said.no{background:var(--deep);border:1px solid var(--line-soft);color:var(--dim)}
+
+.unlock{margin-top:15px;padding:15px 17px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(155,107,255,.16),rgba(59,217,236,.10));
+  border:1px solid var(--violet);display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.unlock p{margin:0;font-size:14px}
+.unlock p b{color:var(--violet)}
+.unlock button{border:0;border-radius:8px;padding:10px 20px;font:inherit;font-size:14px;font-weight:700;
+  cursor:pointer;background:var(--violet);color:#0C0618}
+.unlock button:hover{filter:brightness(1.1)}
+
+.done{text-align:center;padding:56px 26px}
+.done h2{font-size:27px;margin:0 0 8px}
+.done p{color:var(--dim);max-width:48ch;margin:0 auto 26px}
+.stats{display:flex;justify-content:center;gap:34px;flex-wrap:wrap;margin:28px 0 30px}
+.stats div b{display:block;font-family:var(--mono);font-size:34px;line-height:1;color:var(--cyan)}
+.stats div span{font-size:12px;color:var(--faint);font-family:var(--mono);letter-spacing:.06em}
+
+.foot{margin-top:24px;text-align:center;font-size:12px;color:var(--faint);font-family:var(--mono);line-height:1.9}
+
+@media (prefers-reduced-motion: no-preference){
+  .seg div{transition:background .28s ease}
+  .seg div:nth-child(2){transition-delay:.06s}
+  .seg div:nth-child(3){transition-delay:.12s}
+  .seg div:nth-child(4){transition-delay:.18s}
+  .seg div:nth-child(5){transition-delay:.24s}
+  ul.crit li,.chip,.lv{transition:border-color .18s ease, background .18s ease}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <div class="dotgrid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h1>AiBA Prompt Lab</h1>
+        <p>เครื่องมือฝึกเขียนคำสั่ง AI</p>
+      </div>
+    </div>
+    <button class="ghost" id="reset">ล้างทั้งหมด</button>
+  </div>
+
+  <div class="levels" id="levels"></div>
+  <div id="qbar"></div>
+  <div id="stage"></div>
+
+  <p class="foot">เลือกทำข้อไหนในระดับก่อนก็ได้ · ผ่าน 100 คะแนนเพียงข้อเดียว ปลดล็อกระดับถัดไปทันที<br>ความคืบหน้าเก็บในหน้านี้เท่านั้น</p>
+</div>
+
+<script>
+const RX = {
+  role:      /(ในฐานะ|สวมบทบาท|คุณคือ|ทำหน้าที่เป็น|ในบทบาท|รับบทเป็น|เป็นอาจารย์|เป็นเลขานุการ|เป็นเจ้าหน้าที่|เป็นประธาน|เป็นหัวหน้า)/,
+  audience:  /(ผู้อ่าน|ผู้รับ|ส่งถึง|ส่งให้|เสนอต่อ|นำเสนอต่อ|กลุ่มเป้าหมาย|ถึงคณบดี|ถึงนักศึกษา|ถึงอาจารย์|ถึงผู้บริหาร|ถึงที่ประชุม|ถึงคณะกรรมการ|สำหรับนักศึกษา|สำหรับคณบดี|สำหรับอาจารย์|สำหรับที่ประชุม|สำหรับผู้บริหาร|สำหรับคณะกรรมการ)/,
+  verb:      /(สรุป|ร่าง|เขียน|เปรียบเทียบ|ตรวจ|แปล|จัดกลุ่ม|วิเคราะห์|ออกแบบ|จัดทำ|เรียบเรียง|แก้ไข|ปรับ|สร้าง|คิดชื่อ|เสนอ)/,
+  count:     /\d+\s*(ข้อ|บรรทัด|ย่อหน้า|คำ|หน้า|คอลัมน์|ตัวเลือก|ประโยค|ชุด|รายการ|ระดับ|แบบ|ทางเลือก|หัวข้อ|ประเด็น|กลุ่ม|ด้าน|มิติ|ย่อ)/,
+  formatw:   /(ตาราง|บูลเล็ต|หัวข้อย่อย|โครงสร้าง|ความยาว|ไม่เกิน|อย่างน้อย|รูปแบบ|จัดเป็น|แบ่งเป็น|เรียงตาม|ขึ้นต้นด้วย|ปิดท้ายด้วย)/,
+  forbid:    /(ห้าม|อย่า|ไม่ต้อง|งดเว้น|ไม่ให้|เว้นว่าง)/,
+  unsure:    /(ไม่แน่ใจ|ห้ามเดา|อย่าเดา|ห้ามแต่ง|อย่าแต่ง|ไม่มีข้อมูล|ห้ามสมมติ|อย่าสมมติ|เว้นว่างไว้|ระบุว่าไม่ทราบ)/,
+  source:    /(แนบ|ไฟล์ที่|เอกสารที่|ตามเอกสาร|ตามรูบริก|ตามระเบียบ|ตามคลัง|ข้อมูลที่ให้|ที่ให้ไว้|ตามที่แนบ|อ้างอิงจาก|ด้านล่างนี้|ที่วางไว้|จากไฟล์|จากคลัง)/,
+  askback:   /(ถามฉัน|ถามก่อน|ถามกลับ|สอบถามก่อน|ข้อมูลไม่พอ|ข้อมูลยังขาด|ยังขาดข้อมูล|ถามเพิ่ม|ถามคำถามก่อน)/,
+  deident:   /(ลบชื่อ|ตัดชื่อ|ไม่ระบุชื่อ|ไม่ต้องระบุตัว|ปกปิด|ไม่ระบุตัวบุคคล|ระบุตัวบุคคลออก|ลบรหัส|ตัดรหัส|ข้อมูลส่วนบุคคลออก|ไม่มีชื่อนักศึกษา)/,
+  sensitive: /(\b\d{13}\b|เลขประจำตัวประชาชน|เลขบัตรประชาชน|\b0\d{8,9}\b)/
+};
+const norm = s => s.replace(/\s+/g,' ');
+
+function L1(x){return [
+  {label:"บอกว่าใครคือผู้อ่าน", weight:25,
+   hint:"ระบุให้ชัดว่างานชิ้นนี้ส่งถึงใคร เช่น ส่งถึงนักศึกษาชั้นปีที่ 2 หรือ ผู้อ่านคือคณบดี",
+   test:v=>RX.audience.test(v)},
+  {label:"ใช้กริยาสั่งงานที่ชัดเจน", weight:25,
+   hint:"เริ่มด้วยกริยาเดียวที่บอกว่าให้ทำอะไร เช่น ร่าง สรุป เปรียบเทียบ ตรวจ",
+   test:v=>RX.verb.test(v)},
+  {label:"ระบุรูปแบบหรือความยาวที่ตรวจสอบได้", weight:25,
+   hint:"ใส่ตัวเลขหรือโครงสร้างที่วัดได้ เช่น ไม่เกิน 8 บรรทัด หรือ แบ่งเป็น 3 หัวข้อ",
+   test:v=>RX.count.test(v)||RX.formatw.test(v)},
+  {label:"คำสั่งมีรายละเอียดพอให้ทำงานได้", weight:25,
+   hint:"คำสั่งสั้นเกินไป เพิ่มบริบทว่าเรื่องอะไร เพื่ออะไร อย่างน้อย 60 ตัวอักษร",
+   test:v=>norm(v).trim().length>=60}
+].map((c,i)=>x&&x[i]?Object.assign({},c,x[i]):c);}
+
+function L2(x){return [
+  {label:"ใคร — ให้ AI สวมบทบาทอะไร", weight:20,
+   hint:"เช่น เขียนในฐานะเลขานุการคณะ หรือ ในฐานะอาจารย์ผู้สอนรายวิชา",
+   test:v=>RX.role.test(v)},
+  {label:"ให้ใคร — ผู้อ่านปลายทางคือใคร", weight:20,
+   hint:"ระบุผู้รับให้ชัด เพราะผู้อ่านเป็นตัวกำหนดน้ำเสียงและความยาวทั้งหมด",
+   test:v=>RX.audience.test(v)},
+  {label:"ทำอะไร — กริยาเดียวที่ชัดเจน", weight:20,
+   hint:"บอกงานหลักด้วยกริยาที่ตรวจได้ เช่น สรุป ร่าง ตรวจ",
+   test:v=>RX.verb.test(v)},
+  {label:"ออกมาแบบไหน — มีตัวเลขที่นับได้", weight:20,
+   hint:"ต้องมีจำนวนหรือความยาวเป็นตัวเลข เช่น 3 ข้อ หรือ ไม่เกิน 10 บรรทัด",
+   test:v=>RX.count.test(v)},
+  {label:"ห้ามอะไร — ระบุข้อจำกัด", weight:20,
+   hint:"บอกสิ่งที่ห้ามทำ เช่น ห้ามเพิ่มข้อมูลที่ไม่ได้ให้ หรือ ห้ามใส่ข้อมูลติดต่อ",
+   test:v=>RX.forbid.test(v)}
+].map((c,i)=>x&&x[i]?Object.assign({},c,x[i]):c);}
+
+function L3(x){return [
+  {label:"ระบุทั้งบทบาทและผู้อ่านปลายทาง", weight:20,
+   hint:"ระดับนี้ต้องมีครบทั้งสองอย่างในคำสั่งเดียว",
+   test:v=>RX.role.test(v)&&RX.audience.test(v)},
+  {label:"กำหนดรูปแบบผลลัพธ์เป็นตัวเลข", weight:20,
+   hint:"ต้องมีจำนวนหรือความยาวที่นับได้ เพื่อให้ตรวจได้ว่าทำครบหรือยัง",
+   test:v=>RX.count.test(v)},
+  {label:"อ้างถึงวัตถุดิบที่แนบไปด้วย", weight:20,
+   hint:"บอกว่าให้ใช้เฉพาะไฟล์ เอกสาร หรือรูบริกที่แนบไป อย่าให้มันดึงจากความจำ",
+   test:v=>RX.source.test(v)},
+  {label:"มีข้อห้าม และบอกวิธีรับมือเมื่อไม่แน่ใจ", weight:20,
+   hint:"ต้องมีทั้งคำห้าม และประโยคทำนองว่า ถ้าไม่แน่ใจให้เขียนว่าไม่แน่ใจ อย่าเดา",
+   test:v=>RX.forbid.test(v)&&RX.unsure.test(v)},
+  {label:"สั่งให้ถามกลับก่อนลงมือทำ", weight:20,
+   hint:"เติมท้ายคำสั่งว่า ถ้ามีข้อมูลที่ยังขาด ให้ถามก่อน อย่าเพิ่งเขียน",
+   test:v=>RX.askback.test(v)}
+].map((c,i)=>x&&x[i]?Object.assign({},c,x[i]):c);}
+
+const LEVELS = [
+{ name:"บอกให้ครบพอทำงานได้", rule:"4 เกณฑ์ · ข้อละ 25 คะแนน", qs:[
+  { from:"อาจารย์ผู้สอนรายวิชา", to:"ผู้ช่วย AI", subject:"แจ้งเลื่อนกำหนดส่งงานกลุ่ม",
+    body:"งานกลุ่มของรายวิชาที่ท่านสอน เดิมกำหนดส่งวันศุกร์ที่ 5 แต่ห้องปฏิบัติการปิดปรับปรุงกะทันหัน จึงต้องเลื่อนเป็นวันพุธที่ 10 ท่านต้องแจ้งนักศึกษาชั้นปีที่ 2 ทั้งห้องภายในวันนี้",
+    ask:"เขียนคำสั่งที่จะส่งให้ AI ร่างข้อความแจ้งเรื่องนี้", crit:L1() },
+  { from:"หัวหน้าสาขาวิชา", to:"ผู้ช่วย AI", subject:"สรุปบทความวิจัยก่อนประชุมพรุ่งนี้",
+    body:"ท่านอ่านบทความวิจัยความยาว 20 หน้าจบแล้ว พรุ่งนี้เช้าต้องเล่าให้เพื่อนร่วมงานอีก 6 คนที่ยังไม่ได้อ่านฟังในที่ประชุม เวลาที่มีคือ 5 นาที",
+    ask:"เขียนคำสั่งที่จะส่งให้ AI ช่วยสรุปบทความนี้", crit:L1() },
+  { from:"คณะทำงานจัดงานวันวิชาการ", to:"ผู้ช่วย AI", subject:"คิดชื่อหัวข้อสัมมนา",
+    body:"งานวันวิชาการปีนี้มีเวทีสัมมนาเรื่องการใช้เทคโนโลยีในการเรียนการสอน ท่านต้องเสนอชื่อหัวข้อให้ที่ประชุมเลือกในวันศุกร์ ยังไม่มีใครคิดชื่อไว้เลย",
+    ask:"เขียนคำสั่งที่จะส่งให้ AI ช่วยคิดชื่อหัวข้อ", crit:L1() }
+]},
+{ name:"ตอบคำถามให้ครบทั้ง 5 ข้อ", rule:"5 เกณฑ์ · ข้อละ 20 คะแนน", qs:[
+  { from:"เลขานุการคณะ", to:"ผู้ช่วย AI", subject:"บันทึกข้อความขออนุมัติจัดอบรม",
+    body:"คณะต้องการจัดอบรมภายในเรื่องการใช้เครื่องมือดิจิทัลให้บุคลากรสายสนับสนุน 40 คน ใช้เวลาครึ่งวัน ต้องทำบันทึกข้อความเสนอคณบดีเพื่อขออนุมัติหลักการและงบประมาณ",
+    ask:"เขียนคำสั่งให้ AI ร่างบันทึกข้อความฉบับนี้", crit:L2() },
+  { from:"ฝ่ายเลขานุการคณะกรรมการ", to:"ผู้ช่วย AI", subject:"สรุปรายงานการประชุมเป็นตารางมติ",
+    body:"การประชุมคณะกรรมการวิชาการเมื่อวานใช้เวลา 2 ชั่วโมง มีบันทึกดิบอยู่แล้ว ที่ประชุมต้องการเห็นเฉพาะมติ ผู้รับผิดชอบ และกำหนดเวลา ไม่ต้องการรายละเอียดการอภิปราย",
+    ask:"เขียนคำสั่งให้ AI สรุปบันทึกดิบนี้",
+    crit:L2([null,null,null,
+      {label:"ออกมาแบบไหน — ระบุตารางและจำนวนคอลัมน์",
+       hint:"โจทย์นี้ต้องการตาราง ให้ระบุว่ากี่คอลัมน์ และคอลัมน์อะไรบ้าง",
+       test:v=>/ตาราง/.test(v)&&RX.count.test(v)},null]) },
+  { from:"อาจารย์ผู้สอน", to:"ผู้ช่วย AI", subject:"ตรวจรายงานนักศึกษาตามรูบริก",
+    body:"มีรายงานของนักศึกษา 1 ฉบับ และรูบริกการให้คะแนนของรายวิชาที่ระบุเกณฑ์ไว้ 4 ด้าน ท่านต้องการให้ AI ช่วยอ่านและเสนอความเห็นเบื้องต้น ก่อนที่ท่านจะตัดสินคะแนนเอง",
+    ask:"เขียนคำสั่งให้ AI ช่วยตรวจรายงานฉบับนี้", crit:L2() }
+]},
+{ name:"งานจริงที่มีความเสี่ยง", rule:"5 เกณฑ์ · ข้อละ 20 คะแนน · ตรวจข้อมูลอ่อนไหว", qs:[
+  { from:"ฝ่ายประกันคุณภาพ", to:"ผู้ช่วย AI", subject:"วิเคราะห์คำตอบปลายเปิดจากแบบประเมินรายวิชา",
+    body:"มีแบบประเมินรายวิชา 200 ฉบับ ส่วนคำตอบปลายเปิดยังไม่มีใครอ่าน ไฟล์ที่ได้จากระบบมีชื่อและรหัสนักศึกษาติดมาในทุกแถว ท่านต้องการภาพรวมว่านักศึกษาสะท้อนอะไรบ้าง เพื่อเสนอที่ประชุมคณะ",
+    ask:"เขียนคำสั่งให้ AI ช่วยวิเคราะห์คำตอบชุดนี้",
+    crit:L3([null,null,
+      {label:"อ้างถึงไฟล์ที่แนบ และจัดการข้อมูลระบุตัวบุคคล",
+       hint:"ไฟล์นี้มีชื่อและรหัสนักศึกษา ต้องบอกให้ชัดว่าใช้เฉพาะไฟล์ที่แนบ และให้ลบหรือไม่ระบุข้อมูลที่ชี้ตัวบุคคลได้",
+       test:v=>RX.source.test(v)&&RX.deident.test(v)},null,null]) },
+  { from:"หัวหน้าโครงการ", to:"ผู้ช่วย AI", subject:"ร่างข้อเสนอโครงการที่ต้องอ้างตัวเลขจริง",
+    body:"ต้องส่งข้อเสนอโครงการภายในสัปดาห์นี้ ในเอกสารต้องอ้างงบประมาณและสถิติผู้เข้าร่วมของปีที่ผ่านมา ซึ่งอยู่ในไฟล์สรุปที่ท่านมีอยู่ ผู้พิจารณาคือคณะกรรมการที่ไม่รู้จักโครงการนี้มาก่อน",
+    ask:"เขียนคำสั่งให้ AI ร่างข้อเสนอโครงการฉบับนี้", crit:L3() },
+  { from:"ประธานหลักสูตร", to:"ผู้ช่วย AI", subject:"ออกแบบข้อสอบคู่ขนานจากคลังข้อสอบเดิม",
+    body:"หลักสูตรมีคลังข้อสอบเดิมอยู่ 1 ชุด ต้องการชุดคู่ขนานที่วัดจุดประสงค์เดียวกันเพิ่มอีก เพื่อใช้กับนักศึกษาที่สอบซ่อม ผู้ใช้ข้อสอบคืออาจารย์ในหลักสูตรอีก 5 ท่าน",
+    ask:"เขียนคำสั่งให้ AI ช่วยสร้างข้อสอบชุดใหม่", crit:L3() }
+]}];
+
+const blank = () => LEVELS.map(l=>l.qs.map(()=>({draft:"",passed:false,best:0,tries:0,seen:false})));
+let S = blank(), L = 0, Q = 0, showSummary = false;
+
+const cleared  = i => S[i].some(x=>x.passed);
+const unlocked = i => i===0 || cleared(i-1);
+const $ = id => document.getElementById(id);
+
+function drawLevels(){
+  $('levels').innerHTML = LEVELS.map((lv,i)=>{
+    const un = unlocked(i);
+    return `<button class="lv" data-i="${i}" data-on="${(i===L&&!showSummary)?1:0}" data-cleared="${cleared(i)?1:0}" ${un?'':'disabled'}>
+      <div class="num">LEVEL ${String(i+1).padStart(2,'0')}</div>
+      <div class="nm">${lv.name}</div>
+      <div class="sb">${lv.rule}</div>
+      ${un?'':'<div class="lock">ล็อก</div>'}
+    </button>`;
+  }).join('');
+  $('levels').querySelectorAll('.lv').forEach(b=>b.addEventListener('click',()=>{
+    const i = +b.dataset.i;
+    if(!unlocked(i)) return;
+    L = i;
+    const nxt = S[i].findIndex(x=>!x.passed);
+    Q = nxt<0 ? 0 : nxt;
+    showSummary = false; drawAll(true);
+  }));
+}
+
+function drawQbar(){
+  if(showSummary){ $('qbar').innerHTML=''; return; }
+  const chips = LEVELS[L].qs.map((q,j)=>
+    `<button class="chip" data-j="${j}" aria-pressed="${j===Q}" data-done="${S[L][j].passed?1:0}"><span class="st"></span>ข้อ ${j+1}</button>`
+  ).join('');
+  const n = S[L].filter(x=>x.passed).length;
+  $('qbar').innerHTML = `<div class="qbar"><span class="lab">เลือกข้อ</span>${chips}
+    <span class="spacer"></span><span class="meta">ผ่านแล้ว ${n}/3 ในระดับนี้</span></div>`;
+  $('qbar').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+    Q = +b.dataset.j; drawAll(true);
+  }));
+}
+
+function drawStage(focus){
+  if(showSummary){ drawSummary(); return; }
+  const q = LEVELS[L].qs[Q], st = S[L][Q];
+  $('stage').innerHTML = `
+  <div class="grid">
+    <div class="pane brief">
+      <div class="kicker">LEVEL ${String(L+1).padStart(2,'0')} / TASK ${Q+1}</div>
+      <dl><dt>จาก</dt><dd>${q.from}</dd><dt>ถึง</dt><dd>${q.to}</dd><dt>เรื่อง</dt><dd>${q.subject}</dd></dl>
+      <div class="rule"></div>
+      <div class="body">${q.body}</div>
+      <div class="task">${q.ask}</div>
+    </div>
+    <div class="pane">
+      <div class="ehead"><b>คำสั่งของท่าน</b><span id="cc">0 ตัวอักษร</span></div>
+      <textarea id="ta" placeholder="พิมพ์คำสั่งที่ท่านจะส่งให้ AI ตรงนี้"></textarea>
+      <div class="row"><button class="go" id="check">ตรวจคำสั่ง</button><span class="kbd">Ctrl + Enter</span></div>
+      <div id="out"></div>
+    </div>
+  </div>`;
+  const ta = $('ta');
+  ta.value = st.draft; count();
+  if(focus) ta.focus();
+  ta.addEventListener('input',()=>{ st.draft = ta.value; count(); if(st.seen) run(); });
+  ta.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();check();} });
+  $('check').addEventListener('click',check);
+  if(st.seen) run();
+}
+
+function count(){ $('cc').textContent = $('ta').value.trim().length + ' ตัวอักษร'; }
+
+function check(){
+  const st = S[L][Q];
+  if(!$('ta').value.trim()) return;
+  st.seen = true; st.tries++; run();
+}
+
+function run(){
+  const q = LEVELS[L].qs[Q], st = S[L][Q];
+  const v = $('ta').value;
+  const flagged = RX.sensitive.test(v);
+  let total = 0; const segs = [], rows = [];
+  q.crit.forEach(c=>{
+    const ok = c.test(v);
+    if(ok) total += c.weight;
+    segs.push(`<div class="${ok?'on':'off'}"></div>`);
+    rows.push(`<li class="${ok?'ok':'no'}"><span class="gl">${ok?'✓':'✕'}</span>
+      <div><div class="cl">${c.label}</div><div class="ch">${ok?'ผ่านเกณฑ์ข้อนี้':c.hint}</div></div>
+      <div class="cw">${ok?c.weight:0}/${c.weight}</div></li>`);
+  });
+
+  const pass = total===100 && !flagged;
+  st.best = Math.max(st.best,total);
+  if(pass) st.passed = true;
+
+  const verdict = pass ? `<div class="said ok">คำสั่งนี้ครบทุกเกณฑ์แล้ว</div>`
+    : flagged ? `<div class="said no">ลบข้อมูลที่ระบุตัวบุคคลออกก่อน แล้วกดตรวจอีกครั้ง</div>`
+    : `<div class="said no">แก้ข้อที่ยังไม่ผ่าน แล้วกดตรวจอีกครั้ง ตรวจกี่ครั้งก็ได้</div>`;
+
+  const alert = flagged
+    ? `<div class="alert">พบข้อมูลที่ระบุตัวบุคคลในคำสั่ง เช่น เลขประจำตัวหรือหมายเลขโทรศัพท์ ข้อมูลที่วางลงในเครื่องมือ AI แล้วเรียกคืนไม่ได้</div>` : '';
+
+  let banner = '';
+  if(pass){
+    banner = (L < LEVELS.length-1)
+      ? `<div class="unlock"><p><b>ปลดล็อก Level ${L+2}</b> — ${LEVELS[L+1].name} · จะลองข้ออื่นในระดับนี้ต่อ หรือไปเลยก็ได้</p><button id="jump">ไป Level ${L+2}</button></div>`
+      : `<div class="unlock"><p><b>ผ่านครบทั้ง 3 ระดับแล้ว</b> · จะลองข้อที่เหลือต่อ หรือดูสรุปผลก็ได้</p><button id="jump">ดูสรุปผล</button></div>`;
+  }
+
+  $('out').innerHTML = `<div class="readout">
+      <div class="rtop">
+        <div><div class="cap">SCORE</div>
+        <div class="sub">ตรวจแล้ว ${st.tries} ครั้ง · ต้องได้ 100 และไม่มีข้อมูลอ่อนไหว</div></div>
+        <div class="num ${pass?'full':''}"><b>${total}</b><i>/100</i></div>
+      </div>
+      <div class="seg">${segs.join('')}</div>
+      <ul class="crit">${rows.join('')}</ul>
+      ${alert}${verdict}${banner}
+    </div>`;
+
+  if(pass){
+    drawLevels(); drawQbar();
+    const j = $('jump');
+    if(j) j.addEventListener('click',()=>{
+      if(L < LEVELS.length-1){ L++; Q=0; } else { showSummary = true; }
+      drawAll(true); window.scrollTo({top:0,behavior:'smooth'});
+    });
+  }
+}
+
+function drawSummary(){
+  const all = S.flat();
+  const passed = all.filter(x=>x.passed).length;
+  const tried = all.filter(x=>x.tries>0);
+  const avg = tried.length ? Math.round(tried.reduce((a,b)=>a+b.best,0)/tried.length) : 0;
+  const tries = all.reduce((a,b)=>a+b.tries,0);
+  $('stage').innerHTML = `<div class="pane done">
+      <h2>ผ่านครบทั้ง 3 ระดับ</h2>
+      <p>ท่านเขียนคำสั่งที่ครบทั้งบทบาท ผู้อ่าน งาน รูปแบบ และข้อจำกัด ได้ในทุกระดับความยาก</p>
+      <div class="stats">
+        <div><b>${passed}</b><span>ข้อที่ผ่าน / 9</span></div>
+        <div><b>${avg}</b><span>คะแนนเฉลี่ย</span></div>
+        <div><b>${tries}</b><span>ครั้งที่ตรวจ</span></div>
+      </div>
+      <button class="go" id="back">กลับไปทำข้อที่เหลือ</button>
+    </div>`;
+  $('back').addEventListener('click',()=>{
+    showSummary = false;
+    outer: for(let i=0;i<S.length;i++){
+      if(!unlocked(i)) continue;
+      for(let j=0;j<S[i].length;j++) if(!S[i][j].passed){ L=i;Q=j;break outer; }
+    }
+    drawAll(true);
+  });
+}
+
+function drawAll(focus){ drawLevels(); drawQbar(); drawStage(focus); }
+
+$('reset').addEventListener('click',()=>{
+  S = blank(); L=0; Q=0; showSummary=false; drawAll(true);
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+drawAll(false);
+</script>
+</body>
+</html>
