@@ -214,7 +214,7 @@ li.ok .ch{color:var(--mint)}
   <div id="qbar"></div>
   <div id="stage"></div>
 
-  <p class="foot">เลือกทำข้อไหนในระดับก่อนก็ได้ · ผ่าน 100 คะแนนเพียงข้อเดียว ปลดล็อกระดับถัดไปทันที<br>ตัวตรวจดูโครงสร้างประโยคและบริบทของโจทย์ ไม่ได้จับคำเป๊ะ ๆ · ความคืบหน้าเก็บในหน้านี้เท่านั้น</p>
+  <p class="foot">เลือกทำข้อไหนในระดับก่อนก็ได้ ต้องผ่าน 100 คะแนนครบทั้ง 3 ข้อ จึงปลดล็อกระดับถัดไป<br>ตัวตรวจดูโครงสร้างประโยคและบริบทของโจทย์ ไม่ได้จับคำเป๊ะ ๆ ความคืบหน้าเก็บในหน้านี้เท่านั้น</p>
 </div>
 
 <script>
@@ -274,7 +274,7 @@ const P = {
 
 /* 3) ตัวช่วย: คืนข้อความส่วนที่เจอ (เพื่อโชว์หลักฐาน) หรือ null */
 const hit = (rx, v) => { const m = v.match(rx); return m ? m[0].trim() : null; };
-const both = (a, b) => (a && b) ? a + '  ·  ' + b : null;
+const both = (a, b) => (a && b) ? a + ' และ ' + b : null;
 
 /* 4) เกณฑ์: test(v, q) รับข้อความที่ numify แล้ว คืน string หลักฐาน / true / null */
 function ctxHint(v, q){
@@ -336,7 +336,7 @@ function L3(x){return [
 const F = (rx,label) => ({rx,label});
 
 const LEVELS = [
-{ name:"บอกให้ครบพอทำงานได้", rule:"4 เกณฑ์ · ข้อละ 25 คะแนน", qs:[
+{ name:"บอกให้ครบพอทำงานได้", rule:"4 เกณฑ์ ข้อละ 25 คะแนน", qs:[
   { from:"อาจารย์ผู้สอนรายวิชา", to:"ผู้ช่วย AI", subject:"แจ้งเลื่อนกำหนดส่งงานกลุ่ม",
     body:"งานกลุ่มของรายวิชาที่ท่านสอน เดิมกำหนดส่งวันศุกร์ที่ 5 แต่ห้องปฏิบัติการปิดปรับปรุงกะทันหัน จึงต้องเลื่อนเป็นวันพุธที่ 10 ท่านต้องแจ้งนักศึกษาชั้นปีที่ 2 ทั้งห้องภายในวันนี้",
     ask:"เขียนคำสั่งที่จะส่งให้ AI ร่างข้อความแจ้งเรื่องนี้", crit:L1(),
@@ -350,7 +350,7 @@ const LEVELS = [
     ask:"เขียนคำสั่งที่จะส่งให้ AI ช่วยคิดชื่อหัวข้อ", crit:L1(),
     facts:[F(/สัมมนา|เสวนา|เวที/,"ประเภทงาน (สัมมนา)"), F(/เทคโนโลยี|ดิจิทัล|AI|เอไอ/i,"ธีม (เทคโนโลยี)"), F(/การเรียนการสอน|การสอน|การเรียน|การศึกษา|ห้องเรียน/,"บริบท (การเรียนการสอน)"), F(/วันวิชาการ|งานวิชาการ/,"ชื่องาน (วันวิชาการ)"), F(/ที่ประชุม|ให้เลือก|คัดเลือก|โหวต/,"ใช้ให้ที่ประชุมเลือก")] }
 ]},
-{ name:"ตอบคำถามให้ครบทั้ง 5 ข้อ", rule:"5 เกณฑ์ · ข้อละ 20 คะแนน", qs:[
+{ name:"ตอบคำถามให้ครบทั้ง 5 ข้อ", rule:"5 เกณฑ์ ข้อละ 20 คะแนน", qs:[
   { from:"เลขานุการคณะ", to:"ผู้ช่วย AI", subject:"บันทึกข้อความขออนุมัติจัดอบรม",
     body:"คณะต้องการจัดอบรมภายในเรื่องการใช้เครื่องมือดิจิทัลให้บุคลากรสายสนับสนุน 40 คน ใช้เวลาครึ่งวัน ต้องทำบันทึกข้อความเสนอคณบดีเพื่อขออนุมัติหลักการและงบประมาณ",
     ask:"เขียนคำสั่งให้ AI ร่างบันทึกข้อความฉบับนี้", crit:L2() },
@@ -365,7 +365,7 @@ const LEVELS = [
     body:"มีรายงานของนักศึกษา 1 ฉบับ และรูบริกการให้คะแนนของรายวิชาที่ระบุเกณฑ์ไว้ 4 ด้าน ท่านต้องการให้ AI ช่วยอ่านและเสนอความเห็นเบื้องต้น ก่อนที่ท่านจะตัดสินคะแนนเอง",
     ask:"เขียนคำสั่งให้ AI ช่วยตรวจรายงานฉบับนี้", crit:L2() }
 ]},
-{ name:"งานจริงที่มีความเสี่ยง", rule:"5 เกณฑ์ · ข้อละ 20 คะแนน · ตรวจข้อมูลอ่อนไหว", qs:[
+{ name:"งานจริงที่มีความเสี่ยง", rule:"5 เกณฑ์ ข้อละ 20 คะแนน และตรวจข้อมูลอ่อนไหว", qs:[
   { from:"ฝ่ายประกันคุณภาพ", to:"ผู้ช่วย AI", subject:"วิเคราะห์คำตอบปลายเปิดจากแบบประเมินรายวิชา",
     body:"มีแบบประเมินรายวิชา 200 ฉบับ ส่วนคำตอบปลายเปิดยังไม่มีใครอ่าน ไฟล์ที่ได้จากระบบมีชื่อและรหัสนักศึกษาติดมาในทุกแถว ท่านต้องการภาพรวมว่านักศึกษาสะท้อนอะไรบ้าง เพื่อเสนอที่ประชุมคณะ",
     ask:"เขียนคำสั่งให้ AI ช่วยวิเคราะห์คำตอบชุดนี้",
@@ -387,7 +387,7 @@ const LEVELS = [
 const blank = () => LEVELS.map(l=>l.qs.map(()=>({draft:"",passed:false,best:0,tries:0,seen:false})));
 let S = blank(), L = 0, Q = 0, showSummary = false;
 
-const cleared  = i => S[i].some(x=>x.passed);
+const cleared  = i => S[i].every(x=>x.passed);
 const unlocked = i => i===0 || cleared(i-1);
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -492,15 +492,22 @@ function run(){
 
   let banner = '';
   if(pass){
-    banner = (L < LEVELS.length-1)
-      ? `<div class="unlock"><p><b>ปลดล็อก Level ${L+2}</b> — ${LEVELS[L+1].name} · จะลองข้ออื่นในระดับนี้ต่อ หรือไปเลยก็ได้</p><button id="jump">ไป Level ${L+2}</button></div>`
-      : `<div class="unlock"><p><b>ผ่านครบทั้ง 3 ระดับแล้ว</b> · จะลองข้อที่เหลือต่อ หรือดูสรุปผลก็ได้</p><button id="jump">ดูสรุปผล</button></div>`;
+    const left = S[L].filter(x=>!x.passed).length;
+    if(left>0){
+      const nextQ = S[L].findIndex((x,j)=>!x.passed && j>Q);
+      const target = nextQ<0 ? S[L].findIndex(x=>!x.passed) : nextQ;
+      banner = `<div class="unlock"><p><b>ผ่านข้อนี้แล้ว</b> เหลืออีก ${left} ข้อในระดับนี้ ต้องผ่านครบทั้ง 3 ข้อจึงปลดล็อกระดับถัดไป</p><button id="jump" data-q="${target}">ไปข้อ ${target+1}</button></div>`;
+    } else {
+      banner = (L < LEVELS.length-1)
+        ? `<div class="unlock"><p><b>ผ่านครบทั้ง 3 ข้อ ปลดล็อก Level ${L+2}</b> ${LEVELS[L+1].name}</p><button id="jump">ไป Level ${L+2}</button></div>`
+        : `<div class="unlock"><p><b>ผ่านครบทั้ง 3 ระดับแล้ว</b></p><button id="jump">ดูสรุปผล</button></div>`;
+    }
   }
 
   $('out').innerHTML = `<div class="readout">
       <div class="rtop">
         <div><div class="cap">SCORE</div>
-        <div class="sub">ตรวจแล้ว ${st.tries} ครั้ง · ต้องได้ 100 และไม่มีข้อมูลอ่อนไหว</div></div>
+        <div class="sub">ตรวจแล้ว ${st.tries} ครั้ง ต้องได้ 100 และไม่มีข้อมูลอ่อนไหว</div></div>
         <div class="num ${pass?'full':''}"><b>${total}</b><i>/100</i></div>
       </div>
       <div class="seg">${segs.join('')}</div>
@@ -512,7 +519,9 @@ function run(){
     drawLevels(); drawQbar();
     const j = $('jump');
     if(j) j.addEventListener('click',()=>{
-      if(L < LEVELS.length-1){ L++; Q=0; } else { showSummary = true; }
+      if(j.dataset.q!==undefined){ Q = +j.dataset.q; }
+      else if(L < LEVELS.length-1){ L++; Q=0; }
+      else { showSummary = true; }
       drawAll(true); window.scrollTo({top:0,behavior:'smooth'});
     });
   }
@@ -526,20 +535,16 @@ function drawSummary(){
   const tries = all.reduce((a,b)=>a+b.tries,0);
   $('stage').innerHTML = `<div class="pane done">
       <h2>ผ่านครบทั้ง 3 ระดับ</h2>
-      <p>ท่านเขียนคำสั่งที่ครบทั้งบทบาท ผู้อ่าน งาน รูปแบบ และข้อจำกัด ได้ในทุกระดับความยาก</p>
+      <p>ท่านเขียนคำสั่งที่ครบทั้งบทบาท ผู้อ่าน งาน รูปแบบ และข้อจำกัด ได้ครบทั้ง 9 ข้อในทุกระดับความยาก</p>
       <div class="stats">
         <div><b>${passed}</b><span>ข้อที่ผ่าน / 9</span></div>
         <div><b>${avg}</b><span>คะแนนเฉลี่ย</span></div>
         <div><b>${tries}</b><span>ครั้งที่ตรวจ</span></div>
       </div>
-      <button class="go" id="back">กลับไปทำข้อที่เหลือ</button>
+      <button class="go" id="back">กลับไปดูข้อที่ทำไว้</button>
     </div>`;
   $('back').addEventListener('click',()=>{
-    showSummary = false;
-    outer: for(let i=0;i<S.length;i++){
-      if(!unlocked(i)) continue;
-      for(let j=0;j<S[i].length;j++) if(!S[i][j].passed){ L=i;Q=j;break outer; }
-    }
+    showSummary = false; L = LEVELS.length-1; Q = 0;
     drawAll(true);
   });
 }
